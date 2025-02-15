@@ -6,6 +6,8 @@ function Register() {
   const [username, setUsername] = useState("");
   const [isLoading, setLoading] = useState(false);
   const [isPopupVisible, setPopupVisible] = useState(false);
+  const [displayUsernameError, setDisplayUsernameError] = useState(false);
+  const maxUsernameLength = 6;
 
   const navigate = useNavigate();
 
@@ -39,6 +41,12 @@ function Register() {
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
+    if (username.length > maxUsernameLength) {
+      setDisplayUsernameError(true);
+      return;
+    }
+    if (displayUsernameError) setDisplayUsernameError(false);
+
     setLoading(true);
 
     try {
@@ -58,6 +66,11 @@ function Register() {
 
   return (
     <>
+      {isLoading && (
+        <div className="loader-overlay">
+          <div className="loader"></div>
+        </div>
+      )}
       {!isPopupVisible && !isLoading && (
         <>
           <h1>Tic Tac Toe!!</h1>
@@ -65,11 +78,6 @@ function Register() {
             <button onClick={startSession}>Start</button>
           </div>
         </>
-      )}
-      {isLoading && (
-        <div className="loader-overlay">
-          <div className="loader"></div>
-        </div>
       )}
       {isPopupVisible && !isLoading && (
         <div className="card popup">
@@ -89,6 +97,11 @@ function Register() {
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Username"
           />
+          {displayUsernameError && (
+            <p className="username-error" id="username-error">
+              Username cannot exceed {maxUsernameLength} characters
+            </p>
+          )}
           <button
             className="submit-button"
             id="submit-username"
