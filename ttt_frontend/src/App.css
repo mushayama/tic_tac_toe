@@ -1,24 +1,12 @@
 #root {
-  max-width: 1280px;
+  max-width: 100%;
+  max-height: 100%;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
+@keyframes spin {
   from {
     transform: rotate(0deg);
   }
@@ -27,16 +15,317 @@
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.loader {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #646cff;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin infinite 1s linear;
+}
+
+.loader-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .card {
   padding: 2em;
 }
 
-.read-the-docs {
-  color: #888;
+.popup {
+  position: relative;
+  background-color: rgb(40, 40, 40);
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.close-button {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  background-color: transparent;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: #616161;
+}
+
+.close-button:hover {
+  color: #646cff;
+}
+
+.username-input {
+  padding: 10px;
+  width: 100%;
+  max-width: 250px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.username-input:focus {
+  border-color: #646cff;
+}
+
+.submit-button{
+  margin: 15px 0 0 0;
+}
+.submit-button:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+.game-options{
+  position: relative;
+  right: 3px;
+  display: flex;
+  justify-content: space-evenly;
+  margin: 20px 0;
+}
+.game-options input {
+  margin-right: 5px;
+  accent-color: #646cff;
+}
+
+.header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 80%;
+}
+
+.player-info{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.player-info h3 {
+  margin: 5px 0;
+}
+
+.your-marker{
+  font-size: 2rem;
+  font-weight: bold;
+  color: #99edc3;
+}
+.opponent-marker{
+  font-size: 2rem;
+  font-weight: bold;
+  color: #fba2dd;
+}
+
+.vs {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.vs h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #555;
+}
+
+.turn-info {
+  text-align: center;
+  margin-top: 20px;
+}
+.turn-info h3 {
+  font-size: 1.5rem;
+  color: #555;
+  font-weight: bold;
+}
+
+.board-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 30px auto;
+  max-width: 80%;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.board> :nth-child(2)::before,
+.board> :nth-child(3)::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -0.6rem;
+  height: 100%;
+  border-left: 0.2rem solid #646cff;
+}
+.board> :nth-child(3n+5)::before,
+.board> :nth-child(3n+6)::before {
+  content: '';
+  position: absolute;
+  top: -1rem;
+  left: -0.6rem;
+  height: calc(100% + 1rem);
+  border-left: 0.2rem solid #646cff;
+}
+.board> :nth-child(3n+4)::after {
+  content: '';
+  position: absolute;
+  top: -0.6rem;
+  left: 0;
+  width: 100%;
+  border-top: 0.2rem solid #646cff;
+}
+.board> :nth-child(3n+5)::after,
+.board> :nth-child(3n+6)::after {
+  content: '';
+  position: absolute;
+  top: -0.6rem;
+  left: -1rem;
+  width: calc(100% + 1rem);
+  border-top: 0.2rem solid #646cff;
+}
+
+.square {
+  position: relative;
+  overflow: visible;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #1a1a1a;
+  border: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  font-size: 2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+@media (hover: hover) {
+  .square:hover {
+    background-color: #646cff;
+  }
+}
+.square:active {
+  background-color: #646cff;
+}
+.square:focus,
+.square:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+.headline {
+  display: flex;
+  flex-direction: column;
+  font-weight: bold;
+}
+.winning-pieces {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+.winning-pieces h1{
+  font-size: 5rem;
+  margin: 0;
+}
+.headline p{
+  margin: 0 0 10px 0;
+}
+
+.leaderboard{
+  width: 100%;
+  margin: 0 0;
+  padding: 20px;
+}
+.leaderboard h3{
+  color: #646cff;
+}
+
+table{
+  width: 500px;
+  margin-top: 1rem;
+  table-layout: fixed;
+}
+
+th,td{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 10px;
+  text-align: center;
+}
+
+.name-cell{
+  width: 35%;
+}
+
+th {
+  color: #555;
+}
+
+.won {
+  color: #99edc3;
+}
+
+.lost {
+  color: #fba2dd;
+}
+
+.draw {
+  color: #646cff;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  table {
+    width: 450px;
+    font-size: 0.9rem;
+  }
+
+  th,
+  td {
+    padding: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  table {
+    font-size: 0.8rem;
+  }
+
+  th,
+  td {
+    padding: 5px;
+  }
+
+  .table-container{
+    overflow-x: auto;
+  }
+  table{
+    width: 400px;
+  }
 }

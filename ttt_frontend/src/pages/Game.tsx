@@ -1,27 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
-// import "../App.css";
 import { useNakama } from "../context/NakamaContext";
-import Board, { BoardType } from "../components/Board";
+import Board from "../components/Board";
 import { MatchData } from "@heroiclabs/nakama-js";
 import { useNavigate } from "react-router-dom";
-import { PlayerPiece } from "../components/Square";
+import {
+  BoardType,
+  GameResult,
+  GameState,
+  PlayerPiece,
+  UserPieceDict,
+} from "../types/GameTypes";
 
-interface JSONObject {
-  [x: string]: PlayerPiece;
-}
-
-type GameState = "no game" | "searching" | "ongoing" | "ended";
-
-export function Game() {
-  const [gameState, setGameState] = useState<GameState>("no game");
-  const [yourName, setYourName] = useState<string | undefined>(undefined);
-  const [opponentName, setOpponentName] = useState<string | undefined>(
-    undefined
-  );
+export default function Game() {
+  const [gameState, setGameState] = useState<GameState>(GameState.NO_GAME);
+  const [yourName, setYourName] = useState<string>("");
+  const [opponentName, setOpponentName] = useState<string>("");
   const [playerPiece, setPlayerPiece] = useState<PlayerPiece | undefined>(
     undefined
   );
   const [yourTurn, setYourTurn] = useState<boolean>(false);
+  const [fast, setFast] = useState<boolean>(false);
   const [board, setBoard] = useState<BoardType>(Array(9).fill(0));
   const [isLoading, setLoading] = useState(true);
   const {
@@ -32,26 +30,38 @@ export function Game() {
     getUserId,
     getOpponentName,
     setMatchDataCallback,
+    writeRecord,
     makeMove,
   } = useNakama();
   const navigate = useNavigate();
 
-  const joinMatch = async () => {
+  const joinMatch = useCallback(async () => {
     try {
-      await findMatchUsingMatchmaker();
-      setGameState("searching");
+      await findMatchUsingMatchmaker(fast);
+      setGameState(GameState.SEARCHING);
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [findMatchUsingMatchmaker, fast]);
+
+  const cancelMatchSearch = useCallback(async () => {
+    if (GameState.SEARCHING !== gameState) return;
+    try {
+      await cancelMatchmakerTicket();
+      setGameState(GameState.NO_GAME);
+    } catch (err) {
+      console.error(err);
+      throw new Error("Error cancelling match search");
+    }
+  }, [cancelMatchmakerTicket, gameState]);
 
   useEffect(() => {
-    if (gameState === "searching") {
+    if (gameState === GameState.SEARCHING) {
       const timer = setTimeout(async () => {
         try {
-          await cancelMatchmakerTicket();
-          setGameState("no game");
-          alert("unable to find a match. try again in some time");
+          cancelMatchSearch().then(() => {
+            alert("Unable to find a match. Please try again in some time.");
+          });
         } catch (err) {
           console.error(err);
         }
@@ -59,7 +69,7 @@ export function Game() {
 
       return () => clearTimeout(timer);
     }
-  }, [gameState, cancelMatchmakerTicket]);
+  }, [gameState, cancelMatchSearch]);
 
   const handleClick = async (index: number) => {
     try {
@@ -70,7 +80,7 @@ export function Game() {
   };
 
   const setPiece = useCallback(
-    (data: JSONObject) => {
+    (data: UserPieceDict) => {
       try {
         const user_id = getUserId();
         const userPiece = data[user_id];
@@ -83,17 +93,34 @@ export function Game() {
     [getUserId]
   );
 
-  const displayResult = useCallback(
-    (result: PlayerPiece | undefined) => {
-      console.log(result);
-      if (!result) {
-        navigate("/result", { state: { result: "DRAW" } });
-        return;
+  const updatePlayerRecord = useCallback(
+    async (result: string) => {
+      try {
+        await writeRecord(result);
+      } catch (err) {
+        console.error(err);
+        throw new Error("Error updating player record");
       }
-      const winner = result === playerPiece ? yourName : opponentName;
-      navigate("/result", { state: { result: winner } });
     },
-    [navigate, playerPiece, yourName, opponentName]
+    [writeRecord]
+  );
+
+  const displayResult = useCallback(
+    async (result: GameResult) => {
+      try {
+        if (result !== GameResult.FORFEIT) await updatePlayerRecord(result);
+      } catch (err) {
+        console.error(err);
+      }
+
+      navigate("/result", {
+        state: {
+          playerPiece: playerPiece,
+          result: result,
+        },
+      });
+    },
+    [navigate, playerPiece, updatePlayerRecord]
   );
 
   const fetchOpponentName = useCallback(() => {
@@ -107,16 +134,15 @@ export function Game() {
 
   const handleMatchData = useCallback(
     (result: MatchData) => {
-      console.log("match data callback");
-      console.log(result);
+      console.debug("recieved match data: ", result);
       const json_string = new TextDecoder().decode(result.data);
       const json = json_string ? JSON.parse(json_string) : "";
 
-      console.log("json: ", json);
+      console.debug("json: ", json);
 
       switch (result.op_code) {
         case 1:
-          setGameState("ongoing");
+          setGameState(GameState.ONGOING);
           fetchOpponentName();
           setPiece(json.marks);
           break;
@@ -126,15 +152,22 @@ export function Game() {
           break;
         case 3:
           setBoard(json.board);
-          setGameState("ended");
-          displayResult(json.winner);
+          setGameState(GameState.ENDED);
+          if (json.winner) {
+            if (json.winner === playerPiece) {
+              displayResult(GameResult.WON);
+            } else {
+              displayResult(GameResult.LOST);
+            }
+          } else {
+            displayResult(GameResult.DRAW);
+          }
           break;
         case 6:
-          console.log("opponent left the game");
-          displayResult(playerPiece);
+          displayResult(GameResult.FORFEIT);
           break;
         default:
-          console.log("unknown op code ", result.op_code);
+          console.error("unknown op code ", result.op_code);
           break;
       }
     },
@@ -143,13 +176,13 @@ export function Game() {
 
   useEffect(() => {
     if (isLoading) {
-      console.log("Healthcheck");
       const checkhealth = async () => {
         try {
           await healthcheck();
           const name = await getDisplayName();
-          setLoading(false);
+          if (!name) throw new Error("Display name undefined");
           setYourName(name);
+          setLoading(false);
         } catch (err) {
           console.error(err);
           navigate("/");
@@ -157,56 +190,100 @@ export function Game() {
       };
 
       checkhealth();
-    } else {
-      console.log("attaching match data callback");
+    }
+  }, [isLoading, healthcheck, navigate, getDisplayName]);
+
+  useEffect(() => {
+    if (!isLoading) {
       setMatchDataCallback(handleMatchData);
 
       return () => {
         setMatchDataCallback(() => {});
       };
     }
-  }, [
-    isLoading,
-    healthcheck,
-    navigate,
-    getDisplayName,
-    setMatchDataCallback,
-    handleMatchData,
-  ]);
+  }, [isLoading, setMatchDataCallback, handleMatchData]);
+
+  const onFastChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.value === "true") setFast(true);
+    else setFast(false);
+  };
 
   return (
     <>
       {isLoading && (
-        <div>
-          <div></div>
-          <p>Loading...</p>
+        <div className="loader-overlay">
+          <div className="loader"></div>
         </div>
       )}
-      {gameState === "no game" && !isLoading && (
-        <div id="find" className="card">
+      {gameState === GameState.NO_GAME && !isLoading && (
+        <div className="card">
           <h3>Hey {yourName}</h3>
-          <button onClick={() => joinMatch()}>"Find match"</button>
-        </div>
-      )}
-      {gameState === "searching" && !isLoading && (
-        <div id="find" className="card">
-          <h3>searching for a match.....</h3>
-        </div>
-      )}
-      {(gameState === "ongoing" || gameState === "ended") && !isLoading && (
-        <div>
-          <h3>
-            Your Name; {yourName} {playerPiece == 1 ? "X" : "O"}
-          </h3>
-          <h3>
-            Your Opponent; {opponentName} {playerPiece == 2 ? "X" : "O"}
-          </h3>
-          <h3>{yourTurn === true ? "Your" : "Opponent's"} turn</h3>
-          <div id="board" className="card">
-            <Board active={yourTurn} board={board} onClick={handleClick} />
+          <h4>Ready for a new game?</h4>
+          <div className="game-options">
+            <label>
+              <input
+                type="radio"
+                value="true"
+                checked={fast}
+                onChange={onFastChange}
+              />
+              Fast
+            </label>
+            <label>
+              <input
+                type="radio"
+                value="false"
+                checked={!fast}
+                onChange={onFastChange}
+              />
+              Slow
+            </label>
           </div>
+          <button onClick={() => joinMatch()}>Find Match</button>
         </div>
       )}
+      {gameState === GameState.SEARCHING && !isLoading && (
+        <div className="card">
+          <h3>Finding a random player...</h3>
+          <h4>Usually takes 20 seconds</h4>
+          <button className="cancel-button" onClick={() => cancelMatchSearch()}>
+            Cancel
+          </button>
+        </div>
+      )}
+      {(gameState === GameState.ONGOING || gameState === GameState.ENDED) &&
+        !isLoading && (
+          <>
+            <div className="header">
+              <div className="player-info">
+                <h3 className="your-marker">{playerPiece === 1 ? "X" : "O"}</h3>
+                <h3>{yourName}</h3>
+                <h3>(you)</h3>
+              </div>
+              <div className="vs">
+                <h3>VS</h3>
+              </div>
+              <div className="player-info">
+                <h3 className="opponent-marker">
+                  {playerPiece === 1 ? "O" : "X"}
+                </h3>
+                <h3>{opponentName}</h3>
+                <h3>(opp)</h3>
+              </div>
+            </div>
+            <div className="turn-info">
+              <h3>{yourTurn === true ? "Your" : opponentName + "'s"} turn</h3>
+            </div>
+            <div className="board-container">
+              <Board
+                active={yourTurn}
+                playerPiece={playerPiece!}
+                board={board}
+                onClick={handleClick}
+              />
+            </div>
+          </>
+        )}
     </>
   );
 }

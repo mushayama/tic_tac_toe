@@ -2,10 +2,9 @@ import { ReactNode, useEffect, useState } from "react";
 import Nakama from "../lib/nakama";
 import { NakamaContext } from "./NakamaContext";
 import { MatchData } from "@heroiclabs/nakama-js";
+import LeaderboardData from "../types/RecordInterface";
 
-export const NakamaProvider: React.FC<{ children: ReactNode }> = ({
-  children,
-}) => {
+const NakamaProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [nakama, setNakama] = useState<Nakama | null>(null);
 
   useEffect(() => {
@@ -39,9 +38,9 @@ export const NakamaProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  const findMatchUsingMatchmaker = async () => {
+  const findMatchUsingMatchmaker = async (fast: boolean) => {
     if (nakama) {
-      await nakama.findMatchUsingMatchmaker();
+      await nakama.findMatchUsingMatchmaker(fast);
     } else {
       throw new Error("Nakama instance not found");
     }
@@ -79,6 +78,18 @@ export const NakamaProvider: React.FC<{ children: ReactNode }> = ({
     } else throw new Error("Nakama instance not found");
   };
 
+  const writeRecord = async (result: string) => {
+    if (nakama) {
+      await nakama.writeRecord(result);
+    } else throw new Error("Nakama instance not found");
+  };
+
+  const getRecords = async (): Promise<LeaderboardData> => {
+    if (nakama) {
+      return await nakama.getRecords();
+    } else throw new Error("Nakama instance not found");
+  };
+
   const makeMove = async (index: number) => {
     if (nakama) {
       await nakama.makeMove(index);
@@ -105,6 +116,8 @@ export const NakamaProvider: React.FC<{ children: ReactNode }> = ({
         getUserId,
         getOpponentName,
         setMatchDataCallback,
+        writeRecord,
+        getRecords,
         makeMove,
         disconnect,
       }}
@@ -113,3 +126,5 @@ export const NakamaProvider: React.FC<{ children: ReactNode }> = ({
     </NakamaContext.Provider>
   );
 };
+
+export default NakamaProvider;

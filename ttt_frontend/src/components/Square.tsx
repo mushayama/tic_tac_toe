@@ -1,24 +1,28 @@
-export type PlayerPiece = 1 | 2;
+import { Piece, SquareProps } from "../types/GameTypes";
 
-export type Piece = 1 | 2 | 0;
-
-interface SquareProps {
-  active: boolean;
-  index: number;
-  value: Piece;
-  onClick: (index: number) => void;
-}
-
-const Square = ({ active, index, value, onClick }: SquareProps) => {
+const Square = ({
+  active,
+  playerPiece,
+  index,
+  value,
+  onClick,
+}: SquareProps) => {
+  const renderValue =
+    value === Piece.EMPTY ? "" : value === Piece.X ? "X" : "O";
+  const colour =
+    value.valueOf() === playerPiece.valueOf() ? "#99edc3" : "#fba2dd";
   return (
     <>
-      <button
-        style={{ pointerEvents: active ? "all" : "all" }}
+      <div
         className="square"
+        style={{
+          pointerEvents: active && renderValue === "" ? "all" : "none",
+          color: colour,
+        }}
         onClick={() => onClick(index)}
       >
-        {value == 0 ? "" : value == 1 ? "X" : "O"}
-      </button>
+        {renderValue}
+      </div>
     </>
   );
 };

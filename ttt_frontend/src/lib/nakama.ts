@@ -6,6 +6,7 @@ import {
   Socket,
 } from "@heroiclabs/nakama-js";
 import { v4 as uuid } from "uuid";
+import LeaderboardData from "../types/RecordInterface";
 
 class Nakama {
   private client: Client;
@@ -17,9 +18,15 @@ class Nakama {
   private ticket: string | null = null;
   private matchId: string | null = null;
   private opponentName: string | undefined = undefined;
+  private opponentId: string | null = null;
 
   constructor() {
-    this.client = new Client("defaultkey", "127.0.0.1", "7350", this.useSSL);
+    this.client = new Client(
+      "defaultkey",
+      "192.168.171.107",
+      "7350",
+      this.useSSL
+    );
   }
 
   async authenticate(): Promise<void> {
@@ -102,11 +109,14 @@ class Nakama {
     }
   }
 
-  async findMatchUsingMatchmaker(): Promise<void> {
+  async findMatchUsingMatchmaker(fast: boolean): Promise<void> {
     if (!this.session || !this.socket)
       throw new Error("Session or socket not found");
 
-    const query = "*";
+    const query = `+properties.fast:${String(fast)}`;
+    const stringProperties = {
+      fast: String(fast),
+    };
     try {
       this.socket.onmatchmakermatched = (matched: MatchmakerMatched) => {
         if (!this.session || !this.socket) return;
@@ -123,6 +133,7 @@ class Nakama {
         this.socket.joinMatch(matched.match_id).then(
           (match) => {
             this.matchId = match.match_id;
+            this.opponentId = opponent.presence.user_id;
             this.getUserDisplayName(opponent.presence.user_id).then(
               (opponentName) => {
                 this.opponentName = opponentName;
@@ -138,10 +149,11 @@ class Nakama {
       const ticket = await this.socket.addMatchmaker(
         query,
         this.noOfPlayers,
-        this.noOfPlayers
+        this.noOfPlayers,
+        stringProperties
       );
       this.ticket = ticket.ticket;
-      console.log("match requested: ", ticket);
+      console.debug("match requested: ", ticket);
     } catch (err) {
       console.error(err);
       throw new Error("Unable to use matchmaker");
@@ -193,39 +205,56 @@ class Nakama {
     this.socket.onmatchdata = matchDataCallback;
   }
 
-  // async createMatch(): Promise<void> {
-  //   if (!this.socket || !this.session) return;
-  //   const match = await this.socket.createMatch();
-  //   console.log("Match created:", match.match_id);
-  // }
+  async writeRecord(result: string): Promise<void> {
+    if (!this.session || !this.socket)
+      throw new Error("Session or socket is not found");
+    const rpcid = "update_leaderboard";
 
-  // async findMatch(ai: boolean = false): Promise<void> {
-  //   const rpcid = "find_match";
-  //   if (!this.session || !this.socket) {
-  //     console.log("Session or socket not found");
-  //     return;
-  //   }
-  //   try {
-  //     const matches = await this.client.rpc(this.session, rpcid, {
-  //       fast: false,
-  //       ai: ai,
-  //     });
-  //     console.log(matches);
+    try {
+      await this.client.rpc(this.session, rpcid, {
+        result: result,
+      });
+    } catch (err) {
+      console.error(err);
+      throw new Error("Error updating user record to leaderboard");
+    }
+  }
 
-  //     if (typeof matches === "object" && matches !== null) {
-  //       const safeParsedJson = matches as {
-  //         payload: {
-  //           matchIds: string[];
-  //         };
-  //       };
-  //       this.matchId = safeParsedJson.payload.matchIds[0];
-  //       const response = await this.socket.joinMatch(this.matchId!);
-  //       console.log("Matched joined!: ", response);
-  //     }
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  // }
+  async getRecords(): Promise<LeaderboardData> {
+    if (!this.session || !this.socket)
+      throw new Error("Session or socket is not found");
+    const rpcid = "get_leaderboard_data";
+
+    try {
+      const response = await this.client.rpc(this.session, rpcid, {
+        userId: this.session.user_id,
+        opponentId: this.opponentId,
+      });
+      console.debug(response);
+
+      if (
+        typeof response === "object" &&
+        response !== null &&
+        response.payload !== undefined &&
+        typeof response.payload === "object"
+      ) {
+        const safeParsedJson = response.payload as LeaderboardData;
+        safeParsedJson.leaderboardData = safeParsedJson.leaderboardData.map(
+          (data) => {
+            if (data.userId === this.session?.user_id)
+              data.userId = this.displayName!;
+            else data.userId = this.opponentName!;
+            return data;
+          }
+        );
+        console.debug(safeParsedJson);
+        return safeParsedJson;
+      } else throw new Error("Invalid response");
+    } catch (err) {
+      console.error(err);
+      throw new Error("Error updating user record to leaderboard");
+    }
+  }
 
   async makeMove(index: number): Promise<void> {
     if (!this.session || !this.socket || !this.matchId) {
