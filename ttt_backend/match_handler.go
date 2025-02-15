@@ -105,6 +105,7 @@ func (m *MatchHandler) MatchInit(ctx context.Context, logger runtime.Logger, db 
 	label := &MatchLabel{
 		Open: 1,
 	}
+	logger.Debug("fast: %v", fast)
 	if fast {
 		label.Fast = 1
 	}
@@ -470,6 +471,7 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 		s.deadlineRemainingTicks--
 		if s.deadlineRemainingTicks <= 0 {
 			// The player has run out of time to submit their move.
+			logger.Info("player ran out of time")
 			s.playing = false
 			switch s.mark {
 			case api.Mark_MARK_X:

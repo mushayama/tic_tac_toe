@@ -11,8 +11,8 @@ services:
       - "5432"
     image: postgres:12.2-alpine
     ports:
-      - "5432:5432"
-      - "8080:8080"
+      - "192.168.171.107:5432:5432"
+      - "192.168.171.107:8080:8080"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres", "-d", "nakama"]
       interval: 3s
@@ -61,9 +61,9 @@ services:
     links:
       - "postgres:db"
     ports:
-      - "7349:7349"
-      - "7350:7350"
-      - "7351:7351"
+      - "192.168.171.107:7349:7349"
+      - "192.168.171.107:7350:7350"
+      - "192.168.171.107:7351:7351"
     restart: unless-stopped
 
 volumes:
