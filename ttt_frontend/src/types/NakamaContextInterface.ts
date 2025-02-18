@@ -15,7 +15,7 @@ export interface NakamaContextInterface {
   setMatchDataCallback: (
     matchDataCallback: (matchData: MatchData) => void
   ) => void;
-  writeRecord: (result: string) => Promise<void>;
+  writeRecord: (result: string, fast: boolean) => Promise<void>;
   getRecords: () => Promise<LeaderboardData>;
   makeMove: (index: number) => Promise<void>;
   disconnect: () => void;

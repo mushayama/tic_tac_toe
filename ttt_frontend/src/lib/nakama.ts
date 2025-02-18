@@ -23,7 +23,7 @@ class Nakama {
   constructor() {
     this.client = new Client(
       "defaultkey",
-      "192.168.171.107",
+      "192.168.97.107",
       "7350",
       this.useSSL
     );
@@ -205,7 +205,7 @@ class Nakama {
     this.socket.onmatchdata = matchDataCallback;
   }
 
-  async writeRecord(result: string): Promise<void> {
+  async writeRecord(result: string, fast: boolean): Promise<void> {
     if (!this.session || !this.socket)
       throw new Error("Session or socket is not found");
     const rpcid = "update_leaderboard";
@@ -213,6 +213,7 @@ class Nakama {
     try {
       await this.client.rpc(this.session, rpcid, {
         result: result,
+        fast: fast,
       });
     } catch (err) {
       console.error(err);
@@ -239,14 +240,8 @@ class Nakama {
         typeof response.payload === "object"
       ) {
         const safeParsedJson = response.payload as LeaderboardData;
-        safeParsedJson.leaderboardData = safeParsedJson.leaderboardData.map(
-          (data) => {
-            if (data.userId === this.session?.user_id)
-              data.userId = this.displayName!;
-            else data.userId = this.opponentName!;
-            return data;
-          }
-        );
+
+        safeParsedJson.leaderboardData.sort((a, b) => a.rank - b.rank);
         console.debug(safeParsedJson);
         return safeParsedJson;
       } else throw new Error("Invalid response");

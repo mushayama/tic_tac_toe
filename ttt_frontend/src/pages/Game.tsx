@@ -94,9 +94,9 @@ export default function Game() {
   );
 
   const updatePlayerRecord = useCallback(
-    async (result: string) => {
+    async (result: string, fast: boolean) => {
       try {
-        await writeRecord(result);
+        await writeRecord(result, fast);
       } catch (err) {
         console.error(err);
         throw new Error("Error updating player record");
@@ -108,7 +108,8 @@ export default function Game() {
   const displayResult = useCallback(
     async (result: GameResult) => {
       try {
-        if (result !== GameResult.FORFEIT) await updatePlayerRecord(result);
+        if (result !== GameResult.FORFEIT)
+          await updatePlayerRecord(result, fast);
       } catch (err) {
         console.error(err);
       }
@@ -120,7 +121,7 @@ export default function Game() {
         },
       });
     },
-    [navigate, playerPiece, updatePlayerRecord]
+    [navigate, playerPiece, updatePlayerRecord, fast]
   );
 
   const fetchOpponentName = useCallback(() => {

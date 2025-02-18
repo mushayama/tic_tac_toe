@@ -290,6 +290,7 @@ th,td{
 
 .name-cell{
   width: 30%;
+  text-align: left;
 }
 
 th {
@@ -324,7 +325,7 @@ th {
 @media (max-width: 480px) {
   table {
     font-size: 0.8rem;
-    width: 350px;
+    width: 340px;
   }
 
   th,

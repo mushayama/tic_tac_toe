@@ -177,7 +177,9 @@ export default function Result() {
                           <span className="lost">{record.metadata.lost}</span>/
                           <span className="draw">{record.metadata.draw}</span>
                         </td>
-                        <td>{0}</td>
+                        <td>
+                          {record.metadata.fast}/{record.metadata.slow}
+                        </td>
                         <td>{record.score}</td>
                       </tr>
                     ))}

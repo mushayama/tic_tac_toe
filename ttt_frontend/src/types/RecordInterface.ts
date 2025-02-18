@@ -11,5 +11,7 @@ interface RecordData {
     won: number;
     draw: number;
     lost: number;
+    fast: number;
+    slow: number;
   };
 }

@@ -78,9 +78,9 @@ const NakamaProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     } else throw new Error("Nakama instance not found");
   };
 
-  const writeRecord = async (result: string) => {
+  const writeRecord = async (result: string, fast: boolean) => {
     if (nakama) {
-      await nakama.writeRecord(result);
+      await nakama.writeRecord(result, fast);
     } else throw new Error("Nakama instance not found");
   };
 
