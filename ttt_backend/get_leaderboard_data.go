@@ -45,7 +45,7 @@ func rpcGetLeaderboardData(ctx context.Context, logger runtime.Logger, db *sql.D
 		return "", runtime.NewError("userId not correct", 3)
 	}
 
-	_, ownerRecords, _, _, err := nk.LeaderboardRecordsList(ctx, leaderboardId, []string{request.UserId, request.OpponentId}, 5, "", 0)
+	records, ownerRecords, _, _, err := nk.LeaderboardRecordsList(ctx, leaderboardId, []string{request.UserId, request.OpponentId}, 5, "", 0)
 	if err != nil {
 		logger.Error("Error getting leaderboard records", err)
 		return "", errInternalError
@@ -54,15 +54,16 @@ func rpcGetLeaderboardData(ctx context.Context, logger runtime.Logger, db *sql.D
 		logger.Error("Inavlid number of records fetched: ", len(ownerRecords))
 		return "", runtime.NewError("Invalid response", 3)
 	}
+	logger.Debug("records: %v", records)
 
-	leaderboardData := make([]RecordData, 0, len(ownerRecords))
+	ownerData := make([]RecordData, 0, len(ownerRecords))
 
 	for i := 0; i < len(ownerRecords); i++ {
 		metadata := &RecordMetadata{}
 		if err := json.Unmarshal([]byte(ownerRecords[i].Metadata), metadata); err != nil {
 			return "", errUnmarshal
 		}
-		leaderboardData = append(leaderboardData,
+		ownerData = append(ownerData,
 			RecordData{
 				UserId:   ownerRecords[i].OwnerId,
 				Rank:     int(ownerRecords[i].Rank),
@@ -72,6 +73,51 @@ func rpcGetLeaderboardData(ctx context.Context, logger runtime.Logger, db *sql.D
 			},
 		)
 	}
+
+	topRankData := make([]RecordData, 0)
+	for i := 0; i < len(records) && len(topRankData) < 3; i++ {
+		if records[i].OwnerId != request.UserId && records[i].OwnerId != request.OpponentId {
+			metadata := &RecordMetadata{}
+			if err := json.Unmarshal([]byte(records[i].Metadata), metadata); err != nil {
+				return "", errUnmarshal
+			}
+			topRankData = append(topRankData,
+				RecordData{
+					UserId:   records[i].OwnerId,
+					Rank:     int(records[i].Rank),
+					Score:    int(records[i].Score),
+					Subscore: int(records[i].Subscore),
+					Metadata: *metadata,
+				},
+			)
+		}
+	}
+
+	leaderboardData := append(ownerData, topRankData...)
+	userIds := make([]string, 0, len(leaderboardData))
+
+	for i := 0; i < len(leaderboardData); i++ {
+		userIds = append(userIds, leaderboardData[i].UserId)
+	}
+
+	logger.Debug("leaderboardData: %v", leaderboardData)
+	logger.Debug("userIds: %v", userIds)
+
+	users, err := nk.UsersGetId(ctx, userIds, nil)
+	if err != nil {
+		logger.Error("Error getting users: %v", err)
+		return "", errInternalError
+	}
+	for i := 0; i < len(leaderboardData); i++ {
+		for j := 0; j < len(users); j++ {
+			if leaderboardData[i].UserId == users[j].Id {
+				leaderboardData[i].UserId = users[j].DisplayName
+				break
+			}
+		}
+	}
+
+	logger.Debug("leaderboardData: %v", leaderboardData)
 
 	response, err := json.Marshal(GetLeaderboardDataResponse{LeaderboardData: leaderboardData})
 	if err != nil {

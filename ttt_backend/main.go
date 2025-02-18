@@ -10,22 +10,22 @@ import (
 )
 
 var (
-	errInternalError       = runtime.NewError("internal server error", 13) // INTERNAL
-	errMarshal             = runtime.NewError("cannot marshal type", 13)   // INTERNAL
-	errNoInputAllowed      = runtime.NewError("no input allowed", 3)       // INVALID_ARGUMENT
+	errInternalError = runtime.NewError("internal server error", 13) // INTERNAL
+	errMarshal       = runtime.NewError("cannot marshal type", 13)   // INTERNAL
+	// errNoInputAllowed      = runtime.NewError("no input allowed", 3)       // INVALID_ARGUMENT
 	errNoUserIdFound       = runtime.NewError("no user ID in context", 3)  // INVALID_ARGUMENT
 	errUnmarshal           = runtime.NewError("cannot unmarshal type", 13) // INTERNAL
 	errUnableToCreateMatch = runtime.NewError("unable to create match", 13)
 )
 
 const (
-	rpcIdRewards            = "rewards"
-	rpcIdFindMatch          = "find_match"
+	// rpcIdRewards            = "rewards"
+	// rpcIdFindMatch          = "find_match"
 	rpcIdHealthcheck        = "healthcheck"
 	rpcIdUpdateDisplayName  = "update_display_name"
 	rpcIdUpdateLeaderboard  = "update_leaderboard"
 	rpcIdGetLeaderboardData = "get_leaderboard_data"
-	rpcIdStartAiMatch       = "start_ai_match"
+	// rpcIdStartAiMatch       = "start_ai_match"
 )
 
 func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, initializer runtime.Initializer) error {
@@ -42,17 +42,17 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		return err
 	}
 
-	if err := initializer.RegisterRpc(rpcIdRewards, rpcRewards); err != nil {
-		return err
-	}
+	// if err := initializer.RegisterRpc(rpcIdRewards, rpcRewards); err != nil {
+	// 	return err
+	// }
 
-	if err := initializer.RegisterRpc(rpcIdFindMatch, rpcFindMatch(marshaler, unmarshaler)); err != nil {
-		return err
-	}
+	// if err := initializer.RegisterRpc(rpcIdFindMatch, rpcFindMatch(marshaler, unmarshaler)); err != nil {
+	// 	return err
+	// }
 
-	if err := initializer.RegisterRpc(rpcIdStartAiMatch, rpcStartAiMatch(marshaler, unmarshaler)); err != nil {
-		return err
-	}
+	// if err := initializer.RegisterRpc(rpcIdStartAiMatch, rpcStartAiMatch(marshaler, unmarshaler)); err != nil {
+	// 	return err
+	// }
 
 	if err := initializer.RegisterRpc(rpcIdUpdateDisplayName, rpcUpdateDisplayName(unmarshaler)); err != nil {
 		return err

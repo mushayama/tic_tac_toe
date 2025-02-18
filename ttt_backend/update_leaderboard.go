@@ -48,6 +48,7 @@ func (r *GameResult) UnmarshalJSON(data []byte) error {
 
 type RpcUpdateLeaderboardRequest struct {
 	Result GameResult `json:"result"`
+	Fast   bool       `json:"fast"`
 }
 
 // func (r *RpcUpdateLeaderboardRequest) Validate() error {
@@ -61,6 +62,8 @@ type RecordMetadata struct {
 	Won  int `json:"won"`
 	Draw int `json:"draw"`
 	Lost int `json:"lost"`
+	Fast int `json:"fast"`
+	Slow int `json:"slow"`
 }
 
 type UpdateLeaderboardResponse struct {
@@ -86,10 +89,6 @@ func rpcUpdateLeaderboard(ctx context.Context, logger runtime.Logger, db *sql.DB
 		return "", errUnmarshal
 	}
 
-	// if err := request.Validate(); err != nil {
-	// 	return "", err
-	// }
-
 	won := 0
 	lost := 0
 	draw := 0
@@ -100,6 +99,16 @@ func rpcUpdateLeaderboard(ctx context.Context, logger runtime.Logger, db *sql.DB
 	} else {
 		draw++
 	}
+	logger.Debug("won: %d, lost: %d, draw: %d", won, lost, draw)
+
+	fast := 0
+	slow := 0
+	if request.Fast {
+		fast = 1
+	} else {
+		slow = 1
+	}
+	logger.Debug("fast: %t", request.Fast)
 
 	_, ownerRecords, _, _, err := nk.LeaderboardRecordsList(ctx, leaderboardId, []string{userId}, 5, "", 0)
 	if err != nil {
@@ -115,9 +124,14 @@ func rpcUpdateLeaderboard(ctx context.Context, logger runtime.Logger, db *sql.DB
 		won += metadata.Won
 		lost += metadata.Lost
 		draw += metadata.Draw
+		fast += metadata.Fast
+		slow += metadata.Slow
 	}
 
-	_, err = nk.LeaderboardRecordWrite(ctx, leaderboardId, userId, username, int64(2*won+1*draw), int64(math.MaxInt-1*lost), map[string]interface{}{"won": won, "lost": lost, "draw": draw}, nil)
+	primaryScore := int64(2*won + 1*draw)
+	secondaryScore := int64(math.Floor(float64(fast) / float64(fast+slow) * 100))
+
+	_, err = nk.LeaderboardRecordWrite(ctx, leaderboardId, userId, username, primaryScore, secondaryScore, map[string]interface{}{"won": won, "lost": lost, "draw": draw, "fast": fast, "slow": slow}, nil)
 	if err != nil {
 		logger.Error("Error setting owner records", err)
 		return "", errInternalError
