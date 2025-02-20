@@ -5,6 +5,7 @@ ENV CGO_ENABLED 1
 
 WORKDIR /backend
 COPY go.mod .
+# made the following line:  *.go ./  on gcp vm cause of some error. it worked fine afterwords.
 COPY *.go .
 COPY vendor/ vendor/
 

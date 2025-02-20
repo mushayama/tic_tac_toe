@@ -1,6 +1,6 @@
 module tictactoe.com/backend
 
-go 1.23.3
+go 1.23.3 // commented this out on gcp vm cause the go version there was lower than this and this one was not available. Had no issues
 
 require (
 	github.com/heroiclabs/nakama-common v1.35.0

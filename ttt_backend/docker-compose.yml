@@ -11,8 +11,8 @@ services:
       - "5432"
     image: postgres:12.2-alpine
     ports:
-      - "34.60.79.173:5432:5432"
-      - "34.60.79.173:8080:8080"
+      - "34.60.79.173:5432:5432" # utilised 0.0.0.0:5432:5432 on gcp vm
+      - "34.60.79.173:8080:8080" # utilised 0.0.0.0:8080:8080 on gcp vm
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres", "-d", "nakama"]
       interval: 3s
@@ -44,9 +44,9 @@ services:
     links:
       - "postgres:db"
     ports:
-      - "34.60.79.173:7349:7349"
-      - "34.60.79.173:7350:7350"
-      - "34.60.79.173:7351:7351"
+      - "34.60.79.173:7349:7349" # utilised 0.0.0.0:7349:7349 on gcp vm
+      - "34.60.79.173:7350:7350" # utilised 0.0.0.0:7350:7350 on gcp vm
+      - "34.60.79.173:7351:7351" # utilised 0.0.0.0:7351:7351 on gcp vm
     restart: unless-stopped
 
 volumes:
