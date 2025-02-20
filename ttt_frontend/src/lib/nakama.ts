@@ -29,7 +29,7 @@ class Nakama {
   private USER_ID_KEY = "userId";
 
   constructor() {
-    this.client = new Client("defaultkey", "127.0.0.1", "7350", this.useSSL);
+    this.client = new Client("defaultkey", "34.60.79.173", "7350", this.useSSL);
   }
 
   async authenticate(): Promise<void> {
