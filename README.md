@@ -10,12 +10,13 @@ a deployable multiplayer Tic-Tac-Toe game using react.js and Nakama backend with
 - Implement a leaderboard system that tracks the ranking and performance of players.
 - Deploy the Nakama server and game to Google Cloud. Ensure that the server is scalable and can handle multiple simultaneous games.
 
-# to-do
+# result
 
-- add leaderboard functionality
-- complete result page on react side
-- finish logic loop on react side
-- add multiple game modes including ai
-- furnish ui
-- final cleanup
-- google cloud deployment
+- Front-end: A react-js web app built with vite. It utilises React Context API to hold context of a nakama instance throughout the app.
+- Back-end: A golang plugin utilising docker-compose to deploy it with a postgres image and remote nakama apis.
+- We utilise device authentication. We generate uuid (universally unique identifier) and save it on the local local storage. This is browser specific local storage and handled at frontend.
+- All nakama functions and calls, including game logic, are made through backend with the frontend nakama context serving as bridge.
+- nakama maintains its session by a websocket by itself within the frontend context.
+- We utilise nakama Matchmaker to match players instead of implementing it by ourselves. We provide two game modes: fast and slow, with varying time per move. Matchmaker sorts these two types of games by itself.
+- We have implemented a leaderboard that displays upto 5 ranks on the result page of a match. The 5 ranks are the 2 users and whoever the other 3 top rankers are.
+- Deployed this on gcp temporarily. Created a VM on GCE (google compute engine) where we hosted the built distribution of react and hosted those static files through nginx. For the backend, I uploaded the whole repo to the VM, installed docker and docker-compose and deployed the docker-stack much like on local machine with a couple small changes that have been added as comments in the backend repo.
