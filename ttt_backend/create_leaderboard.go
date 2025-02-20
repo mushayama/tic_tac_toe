@@ -13,6 +13,7 @@ func createLeaderboard(nk runtime.NakamaModule) func(context.Context, runtime.Lo
 
 		leaderboardId := "tic-tac-toe"
 
+		// "0 0 1 1 *" is a CRON format reset schedule, telling to reset at 12AM on 1st Jan of every year
 		err := nk.LeaderboardCreate(ctx, leaderboardId, false, "desc", "set", "0 0 1 1 *", map[string]interface{}{
 			"ai": false}, true)
 

@@ -42,7 +42,7 @@ func rpcGetLeaderboardData(ctx context.Context, logger runtime.Logger, db *sql.D
 
 	if request.UserId != userId {
 		logger.Error("userId not correct")
-		return "", runtime.NewError("userId not correct", 3)
+		return "", errIncorrectUserId
 	}
 
 	records, ownerRecords, _, _, err := nk.LeaderboardRecordsList(ctx, leaderboardId, []string{request.UserId, request.OpponentId}, 5, "", 0)
@@ -52,7 +52,7 @@ func rpcGetLeaderboardData(ctx context.Context, logger runtime.Logger, db *sql.D
 	}
 	if len(ownerRecords) != 2 {
 		logger.Error("Inavlid number of records fetched: ", len(ownerRecords))
-		return "", runtime.NewError("Invalid response", 3)
+		return "", errRecordNotFound
 	}
 	logger.Debug("records: %v", records)
 

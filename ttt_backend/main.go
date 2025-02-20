@@ -9,23 +9,22 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
+// https://pkg.go.dev/google.golang.org/grpc/codes : error codes
 var (
-	errInternalError = runtime.NewError("internal server error", 13) // INTERNAL
-	errMarshal       = runtime.NewError("cannot marshal type", 13)   // INTERNAL
-	// errNoInputAllowed      = runtime.NewError("no input allowed", 3)       // INVALID_ARGUMENT
-	errNoUserIdFound       = runtime.NewError("no user ID in context", 3)  // INVALID_ARGUMENT
-	errUnmarshal           = runtime.NewError("cannot unmarshal type", 13) // INTERNAL
-	errUnableToCreateMatch = runtime.NewError("unable to create match", 13)
+	errInternalError       = runtime.NewError("internal server error", 13)  // INTERNAL
+	errMarshal             = runtime.NewError("cannot marshal type", 13)    // INTERNAL
+	errNoUserIdFound       = runtime.NewError("no user ID in context", 3)   // INVALID_ARGUMENT
+	errIncorrectUserId     = runtime.NewError("user Id incorrect", 3)       // INVALID_ARGUMENT
+	errUnmarshal           = runtime.NewError("cannot unmarshal type", 13)  // INTERNAL
+	errUnableToCreateMatch = runtime.NewError("unable to create match", 13) // INTERNAL
+	errRecordNotFound      = runtime.NewError("Record not found", 5)        // NOT_FOUND
 )
 
 const (
-	// rpcIdRewards            = "rewards"
-	// rpcIdFindMatch          = "find_match"
 	rpcIdHealthcheck        = "healthcheck"
 	rpcIdUpdateDisplayName  = "update_display_name"
 	rpcIdUpdateLeaderboard  = "update_leaderboard"
 	rpcIdGetLeaderboardData = "get_leaderboard_data"
-	// rpcIdStartAiMatch       = "start_ai_match"
 )
 
 func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, initializer runtime.Initializer) error {
@@ -41,18 +40,6 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 	if err := initializer.RegisterRpc(rpcIdHealthcheck, rpcHealthcheck); err != nil {
 		return err
 	}
-
-	// if err := initializer.RegisterRpc(rpcIdRewards, rpcRewards); err != nil {
-	// 	return err
-	// }
-
-	// if err := initializer.RegisterRpc(rpcIdFindMatch, rpcFindMatch(marshaler, unmarshaler)); err != nil {
-	// 	return err
-	// }
-
-	// if err := initializer.RegisterRpc(rpcIdStartAiMatch, rpcStartAiMatch(marshaler, unmarshaler)); err != nil {
-	// 	return err
-	// }
 
 	if err := initializer.RegisterRpc(rpcIdUpdateDisplayName, rpcUpdateDisplayName(unmarshaler)); err != nil {
 		return err
@@ -114,17 +101,4 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 
 	logger.Info("Plugin loaded in '%d' msec.", time.Since(initStart).Milliseconds())
 	return nil
-
-	// err := initializer.RegisterRpc("healthcheck", RpcHealthcheck)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// err2 := initializer.RegisterRpc("findMatch", RpcFindMatch)
-	// if err2 != nil {
-	// 	return err2
-	// }
-
-	// logger.Info("module loaded in %dms", time.Since(initStart).Milliseconds())
-	// return nil
 }

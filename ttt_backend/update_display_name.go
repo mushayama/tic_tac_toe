@@ -14,6 +14,8 @@ type UpdateDisplayNameResponse struct {
 	Success bool `json:"success"`
 }
 
+type nakamaRpcFunc func(context.Context, runtime.Logger, *sql.DB, runtime.NakamaModule, string) (string, error)
+
 func rpcUpdateDisplayName(unmarshaler *protojson.UnmarshalOptions) nakamaRpcFunc {
 	return func(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
 		_, ok := ctx.Value(runtime.RUNTIME_CTX_USER_ID).(string)

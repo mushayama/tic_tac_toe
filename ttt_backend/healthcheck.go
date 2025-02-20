@@ -20,7 +20,7 @@ func rpcHealthcheck(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 	out, err := json.Marshal(response)
 	if err != nil {
 		logger.Error("Error marshalling response type to JSON: %v", err)
-		return "", runtime.NewError("Cannot marshal type", 13)
+		return "", errMarshal
 	}
 
 	return string(out), nil

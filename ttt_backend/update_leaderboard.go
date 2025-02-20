@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"math"
 
 	"github.com/heroiclabs/nakama-common/runtime"
 )
@@ -50,13 +49,6 @@ type RpcUpdateLeaderboardRequest struct {
 	Result GameResult `json:"result"`
 	Fast   bool       `json:"fast"`
 }
-
-// func (r *RpcUpdateLeaderboardRequest) Validate() error {
-// 	if r.Result != WON && r.Result != LOST && r.Result != DRAW {
-// 		return fmt.Errorf("invalid result: %s, must be one of: 'won', 'lost', or 'draw'", r.Result)
-// 	}
-// 	return nil
-// }
 
 type RecordMetadata struct {
 	Won  int `json:"won"`
@@ -128,8 +120,11 @@ func rpcUpdateLeaderboard(ctx context.Context, logger runtime.Logger, db *sql.DB
 		slow += metadata.Slow
 	}
 
-	primaryScore := int64(2*won + 1*draw)
-	secondaryScore := int64(math.Floor(float64(fast) / float64(fast+slow) * 100))
+	primaryScore := int64(2*won + draw - lost)
+	if primaryScore < 0 {
+		primaryScore = 0
+	}
+	secondaryScore := int64(fast + slow)
 
 	_, err = nk.LeaderboardRecordWrite(ctx, leaderboardId, userId, username, primaryScore, secondaryScore, map[string]interface{}{"won": won, "lost": lost, "draw": draw, "fast": fast, "slow": slow}, nil)
 	if err != nil {
