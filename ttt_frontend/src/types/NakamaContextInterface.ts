@@ -11,7 +11,7 @@ export interface NakamaContextInterface {
   findMatchUsingMatchmaker: (fast: boolean) => Promise<void>;
   cancelMatchmakerTicket: () => Promise<void>;
   getUserId: () => string;
-  getOpponentName: () => string;
+  getOpponentName: () => Promise<string | undefined>;
   setMatchDataCallback: (
     matchDataCallback: (matchData: MatchData) => void
   ) => void;

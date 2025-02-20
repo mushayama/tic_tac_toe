@@ -63,7 +63,7 @@ const NakamaProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     }
   };
 
-  const getOpponentName = (): string => {
+  const getOpponentName = async (): Promise<string | undefined> => {
     if (nakama) {
       return nakama.getOpponentName();
     } else {

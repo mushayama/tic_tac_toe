@@ -116,6 +116,8 @@ class Nakama {
   async findMatchUsingMatchmaker(fast: boolean): Promise<void> {
     if (!this.session || !this.socket) throw new SessionError();
 
+    this.opponentName = undefined;
+    this.opponentId = null;
     const query = `+properties.fast:${String(fast)}`;
     const stringProperties = {
       fast: String(fast),
@@ -137,11 +139,9 @@ class Nakama {
           (match) => {
             this.matchId = match.match_id;
             this.opponentId = opponent.presence.user_id;
-            this.getUserDisplayName(opponent.presence.user_id).then(
-              (opponentName) => {
-                this.opponentName = opponentName;
-              }
-            );
+            this.getOpponentDisplayName().then((opponentName) => {
+              this.opponentName = opponentName;
+            });
           },
           () => {
             console.error("Unable to join match");
@@ -163,11 +163,14 @@ class Nakama {
     }
   }
 
-  async getUserDisplayName(userId: string): Promise<string | undefined> {
+  async getOpponentDisplayName(): Promise<string | undefined> {
     if (!this.session || !this.socket) throw new SessionError();
+    if (!this.opponentId) throw new Error("OpponentId not present");
 
     try {
-      const response = await this.client.getUsers(this.session, [userId]);
+      const response = await this.client.getUsers(this.session, [
+        this.opponentId,
+      ]);
 
       if (!response.users || response.users.length === 0)
         throw new NakamaResponseError("Users not present in response");
@@ -195,8 +198,16 @@ class Nakama {
     return this.session.user_id;
   }
 
-  getOpponentName(): string {
-    if (!this.opponentName) throw new Error("opponent name not found");
+  async getOpponentName(): Promise<string | undefined> {
+    if (!this.opponentName) {
+      try {
+        const name = await this.getOpponentDisplayName();
+        this.opponentName = name;
+      } catch (err) {
+        console.error(err);
+        throw new NakamaHandlerError("Unable to get opponent name");
+      }
+    }
     return this.opponentName;
   }
 

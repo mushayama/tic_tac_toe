@@ -14,7 +14,6 @@ import {
 export default function Result() {
   const [isLoading, setLoading] = useState<boolean>(true);
   const [yourName, setYourName] = useState<string>("");
-  const [opponentName, setOpponentName] = useState<string>("");
   const [result, setResult] = useState<string>("");
   const [resultColor, setResultColor] = useState<string>(NEUTRAL_COLOR);
   const [yourPiece, setYourPiece] = useState<PlayerPiece | undefined>(
@@ -77,8 +76,8 @@ export default function Result() {
   }, [location]);
 
   useEffect(() => {
-    if (opponentName !== "" && yourName !== "") setResultString();
-  }, [opponentName, yourName, setResultString]);
+    if (yourName !== "") setResultString();
+  }, [yourName, setResultString]);
 
   useEffect(() => {
     if (isLoading) {
@@ -93,15 +92,12 @@ export default function Result() {
 
           const name = await getDisplayName();
           if (!name) throw new Error("Display name undefined");
-          const oppName = getOpponentName();
-          if (!oppName) throw new Error("Opponent name undefined");
 
           if (location.state.result !== GameResult.FORFEIT)
             await fetchLeaderboardData();
 
           setYourPiece(location.state.playerPiece);
           setYourName(name);
-          setOpponentName(oppName);
           setLoading(false);
         } catch (err) {
           console.error(err);

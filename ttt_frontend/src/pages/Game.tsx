@@ -15,7 +15,7 @@ import { MATCH_REQUEST_TIMEOUT } from "../Constants";
 export default function Game() {
   const [gameState, setGameState] = useState<GameState>(GameState.NO_GAME);
   const [yourName, setYourName] = useState<string>("");
-  const [opponentName, setOpponentName] = useState<string>("");
+  const [opponentName, setOpponentName] = useState<string>("Opp");
   const [playerPiece, setPlayerPiece] = useState<PlayerPiece | undefined>(
     undefined
   );
@@ -125,10 +125,10 @@ export default function Game() {
     [navigate, playerPiece, updatePlayerRecord, fast]
   );
 
-  const fetchOpponentName = useCallback(() => {
+  const fetchOpponentName = useCallback(async () => {
     try {
-      const name = getOpponentName();
-      setOpponentName(name);
+      const name = await getOpponentName();
+      if (name) setOpponentName(name);
     } catch (err) {
       console.error(err);
     }
