@@ -10,6 +10,7 @@ import {
   PlayerPiece,
   UserPieceDict,
 } from "../types/GameTypes";
+import { MATCH_REQUEST_TIMEOUT } from "../Constants";
 
 export default function Game() {
   const [gameState, setGameState] = useState<GameState>(GameState.NO_GAME);
@@ -65,7 +66,7 @@ export default function Game() {
         } catch (err) {
           console.error(err);
         }
-      }, 30000);
+      }, MATCH_REQUEST_TIMEOUT);
 
       return () => clearTimeout(timer);
     }
@@ -85,7 +86,7 @@ export default function Game() {
         const user_id = getUserId();
         const userPiece = data[user_id];
         setPlayerPiece(userPiece);
-        if (userPiece === 1) setYourTurn(true);
+        if (userPiece === PlayerPiece.X) setYourTurn(true);
       } catch (err) {
         console.error("error retrieving user_id", err);
       }
@@ -257,7 +258,9 @@ export default function Game() {
           <>
             <div className="header">
               <div className="player-info">
-                <h3 className="your-marker">{playerPiece === 1 ? "X" : "O"}</h3>
+                <h3 className="your-marker">
+                  {playerPiece === PlayerPiece.X ? "X" : "O"}
+                </h3>
                 <h3>{yourName}</h3>
                 <h3>(you)</h3>
               </div>
@@ -266,7 +269,7 @@ export default function Game() {
               </div>
               <div className="player-info">
                 <h3 className="opponent-marker">
-                  {playerPiece === 1 ? "O" : "X"}
+                  {playerPiece === PlayerPiece.X ? "O" : "X"}
                 </h3>
                 <h3>{opponentName}</h3>
                 <h3>(opp)</h3>

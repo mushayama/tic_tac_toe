@@ -4,13 +4,19 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useNakama } from "../context/NakamaContext";
 import { GameResult, PlayerPiece } from "../types/GameTypes";
 import LeaderboardData from "../types/RecordInterface";
+import {
+  HOME_COLOR,
+  LEADERBOARD_LOAD_DELAY,
+  NEUTRAL_COLOR,
+  OPPONENT_COLOR,
+} from "../Constants";
 
 export default function Result() {
   const [isLoading, setLoading] = useState<boolean>(true);
   const [yourName, setYourName] = useState<string>("");
   const [opponentName, setOpponentName] = useState<string>("");
   const [result, setResult] = useState<string>("");
-  const [resultColor, setResultColor] = useState<string>("#646cff");
+  const [resultColor, setResultColor] = useState<string>(NEUTRAL_COLOR);
   const [yourPiece, setYourPiece] = useState<PlayerPiece | undefined>(
     undefined
   );
@@ -29,8 +35,13 @@ export default function Result() {
     navigate("/game");
   };
 
+  const delay = async (milliseconds: number = LEADERBOARD_LOAD_DELAY) => {
+    await new Promise((resolve) => setTimeout(resolve, milliseconds));
+  };
+
   const fetchLeaderboardData = useCallback(async () => {
     try {
+      await delay();
       const response: LeaderboardData = await getRecords();
       setLeaderboardData(response);
     } catch (err) {
@@ -51,12 +62,12 @@ export default function Result() {
     } else if (location.state.result === GameResult.WON) {
       resultString = "WINNER!";
       messageString = "Well done! Keep it up!";
-      setResultColor("#99edc3");
+      setResultColor(HOME_COLOR);
       setWinnerPiece(location.state.playerPiece);
     } else {
       resultString = "WINNER!";
       messageString = "Better luck next time!";
-      setResultColor("#fba2dd");
+      setResultColor(OPPONENT_COLOR);
       if (location.state.playerPiece === PlayerPiece.X)
         setWinnerPiece(PlayerPiece.O);
       else setWinnerPiece(PlayerPiece.X);
@@ -130,7 +141,8 @@ export default function Result() {
                   )
                 }
                 style={{
-                  color: yourPiece === PlayerPiece.X ? "#99edc3" : "#fba2dd",
+                  color:
+                    yourPiece === PlayerPiece.X ? HOME_COLOR : OPPONENT_COLOR,
                 }}
               >
                 X
@@ -144,7 +156,8 @@ export default function Result() {
                   )
                 }
                 style={{
-                  color: yourPiece === PlayerPiece.O ? "#99edc3" : "#fba2dd",
+                  color:
+                    yourPiece === PlayerPiece.O ? HOME_COLOR : OPPONENT_COLOR,
                 }}
               >
                 O

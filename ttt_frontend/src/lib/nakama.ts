@@ -7,6 +7,11 @@ import {
 } from "@heroiclabs/nakama-js";
 import { v4 as uuid } from "uuid";
 import LeaderboardData from "../types/RecordInterface";
+import {
+  NakamaHandlerError,
+  NakamaResponseError,
+  SessionError,
+} from "../Errors";
 
 class Nakama {
   private client: Client;
@@ -20,6 +25,9 @@ class Nakama {
   private opponentName: string | undefined = undefined;
   private opponentId: string | null = null;
 
+  private DEVICE_ID_KEY = "deviceId";
+  private USER_ID_KEY = "userId";
+
   constructor() {
     this.client = new Client(
       "defaultkey",
@@ -30,22 +38,22 @@ class Nakama {
   }
 
   async authenticate(): Promise<void> {
-    let deviceId = localStorage.getItem("deviceId");
+    let deviceId = localStorage.getItem(this.DEVICE_ID_KEY);
     if (!deviceId) {
       deviceId = uuid();
-      localStorage.setItem("deviceId", deviceId);
+      localStorage.setItem(this.DEVICE_ID_KEY, deviceId);
     }
 
     try {
       this.session = await this.client.authenticateDevice(deviceId, true);
     } catch (err) {
       console.error(err);
-      throw new Error("Error creating session");
+      throw new NakamaHandlerError("Error creating session");
     }
 
     if (!this.session.user_id)
-      throw new Error("Unexpected behaviour: user Id missing");
-    localStorage.setItem("userId", this.session.user_id);
+      throw new NakamaResponseError("Unexpected behaviour: user Id missing");
+    localStorage.setItem(this.USER_ID_KEY, this.session.user_id);
 
     try {
       const trace = false;
@@ -53,7 +61,7 @@ class Nakama {
       await this.socket.connect(this.session, true);
     } catch (err) {
       console.error(err);
-      throw new Error("Error connecting websocket");
+      throw new NakamaHandlerError("Error connecting websocket");
     }
   }
 
@@ -62,27 +70,27 @@ class Nakama {
   }
 
   async getDisplayName(): Promise<string | undefined> {
-    if (!this.session || !this.socket)
-      throw new Error("Session or socket is not found");
+    if (!this.session || !this.socket) throw new SessionError();
 
     try {
       if (this.displayName) return this.displayName;
 
       const account = await this.client.getAccount(this.session);
 
-      if (!account.user) throw new Error("User missing in account response");
+      if (!account.user)
+        throw new NakamaResponseError("User missing in account response");
       this.displayName = account.user.display_name;
       return account.user.display_name;
     } catch (err) {
       console.error(err);
-      throw new Error("Unable to fetch account data");
+      throw new NakamaHandlerError("Unable to fetch account data");
     }
   }
 
   async setDisplayName(name: string): Promise<void> {
     const rpcid = "update_display_name";
     if (!this.session || !this.socket) {
-      throw new Error("Session or socket is not found");
+      throw new SessionError();
     }
     try {
       await this.client.rpc(this.session, rpcid, {
@@ -91,13 +99,12 @@ class Nakama {
       this.displayName = name;
     } catch (err) {
       console.error(err);
-      throw new Error("Unable to update display name");
+      throw new NakamaHandlerError("Unable to update display name");
     }
   }
 
   async healthcheck(): Promise<void> {
-    if (!this.socket || !this.session)
-      throw new Error("Nakama socket or session missing");
+    if (!this.socket || !this.session) throw new SessionError();
     if (!this.displayName) throw new Error("User display name missing");
 
     const rpcid = "healthcheck";
@@ -105,13 +112,14 @@ class Nakama {
       await this.client.rpc(this.session, rpcid, {});
     } catch (err) {
       console.error(err);
-      throw new Error("Healthcheck failed. Problem with server connection.");
+      throw new NakamaHandlerError(
+        "Healthcheck failed. Problem with server connection."
+      );
     }
   }
 
   async findMatchUsingMatchmaker(fast: boolean): Promise<void> {
-    if (!this.session || !this.socket)
-      throw new Error("Session or socket not found");
+    if (!this.session || !this.socket) throw new SessionError();
 
     const query = `+properties.fast:${String(fast)}`;
     const stringProperties = {
@@ -156,41 +164,38 @@ class Nakama {
       console.debug("match requested: ", ticket);
     } catch (err) {
       console.error(err);
-      throw new Error("Unable to use matchmaker");
+      throw new NakamaHandlerError("Unable to use matchmaker");
     }
   }
 
   async getUserDisplayName(userId: string): Promise<string | undefined> {
-    if (!this.session || !this.socket)
-      throw new Error("Session or socket is not found");
+    if (!this.session || !this.socket) throw new SessionError();
 
     try {
       const response = await this.client.getUsers(this.session, [userId]);
 
       if (!response.users || response.users.length === 0)
-        throw new Error("Users not present in response");
+        throw new NakamaResponseError("Users not present in response");
       return response.users[0].display_name;
     } catch (err) {
       console.error(err);
-      throw new Error("Unable to fetch user data");
+      throw new NakamaHandlerError("Unable to fetch user data");
     }
   }
 
   async cancelMatchmakerTicket(): Promise<void> {
-    if (!this.session || !this.socket)
-      throw new Error("Session or socket is not found");
+    if (!this.session || !this.socket) throw new SessionError();
     if (!this.ticket) return;
     try {
       await this.socket.removeMatchmaker(this.ticket);
     } catch (err) {
       console.error(err);
-      throw new Error("Problem cancelling matchmaker ticket");
+      throw new NakamaHandlerError("Problem cancelling matchmaker ticket");
     }
   }
 
   getUserId(): string {
-    if (!this.session || !this.socket)
-      throw new Error("Session or socket is not found");
+    if (!this.session || !this.socket) throw new SessionError();
     if (!this.session.user_id) throw new Error("User id not found");
     return this.session.user_id;
   }
@@ -201,13 +206,12 @@ class Nakama {
   }
 
   setMatchDataCallback(matchDataCallback: (matchData: MatchData) => void) {
-    if (!this.socket) throw new Error("socket not found");
+    if (!this.socket) throw new SessionError();
     this.socket.onmatchdata = matchDataCallback;
   }
 
   async writeRecord(result: string, fast: boolean): Promise<void> {
-    if (!this.session || !this.socket)
-      throw new Error("Session or socket is not found");
+    if (!this.session || !this.socket) throw new SessionError();
     const rpcid = "update_leaderboard";
 
     try {
@@ -217,13 +221,12 @@ class Nakama {
       });
     } catch (err) {
       console.error(err);
-      throw new Error("Error updating user record to leaderboard");
+      throw new NakamaHandlerError("Error updating user record to leaderboard");
     }
   }
 
   async getRecords(): Promise<LeaderboardData> {
-    if (!this.session || !this.socket)
-      throw new Error("Session or socket is not found");
+    if (!this.session || !this.socket) throw new SessionError();
     const rpcid = "get_leaderboard_data";
 
     try {
@@ -244,23 +247,25 @@ class Nakama {
         safeParsedJson.leaderboardData.sort((a, b) => a.rank - b.rank);
         console.debug(safeParsedJson);
         return safeParsedJson;
-      } else throw new Error("Invalid response");
+      } else throw new NakamaResponseError("Invalid response");
     } catch (err) {
       console.error(err);
-      throw new Error("Error updating user record to leaderboard");
+      throw new NakamaHandlerError(
+        "Error fetching user records from leaderboard"
+      );
     }
   }
 
   async makeMove(index: number): Promise<void> {
     if (!this.session || !this.socket || !this.matchId) {
-      throw new Error("Session, socket or matchId not found");
+      throw new SessionError();
     }
     const data = { position: index };
     try {
       await this.socket.sendMatchState(this.matchId, 4, JSON.stringify(data));
     } catch (err) {
       console.error(err);
-      throw new Error("Error sending match state");
+      throw new NakamaHandlerError("Error sending match state");
     }
   }
 }

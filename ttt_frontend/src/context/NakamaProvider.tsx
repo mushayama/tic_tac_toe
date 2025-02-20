@@ -3,6 +3,7 @@ import Nakama from "../lib/nakama";
 import { NakamaContext } from "./NakamaContext";
 import { MatchData } from "@heroiclabs/nakama-js";
 import LeaderboardData from "../types/RecordInterface";
+import { NakamaInstanceError } from "../Errors";
 
 const NakamaProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [nakama, setNakama] = useState<Nakama | null>(null);
@@ -21,20 +22,20 @@ const NakamaProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const getDisplayName = async (): Promise<string | undefined> => {
     if (nakama) {
       return await nakama.getDisplayName();
-    } else throw new Error("Nakama instance not found");
+    } else throw new NakamaInstanceError();
   };
 
   const setDisplayName = async (name: string) => {
     if (nakama) {
       await nakama.setDisplayName(name);
-    } else throw new Error("Nakama instance not found");
+    } else throw new NakamaInstanceError();
   };
 
   const healthcheck = async () => {
     if (nakama) {
       await nakama.healthcheck();
     } else {
-      throw new Error("Nakama instance not found");
+      throw new NakamaInstanceError();
     }
   };
 
@@ -42,7 +43,7 @@ const NakamaProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     if (nakama) {
       await nakama.findMatchUsingMatchmaker(fast);
     } else {
-      throw new Error("Nakama instance not found");
+      throw new NakamaInstanceError();
     }
   };
 
@@ -50,7 +51,7 @@ const NakamaProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     if (nakama) {
       await nakama.cancelMatchmakerTicket();
     } else {
-      throw new Error("Nakama instance not found");
+      throw new NakamaInstanceError();
     }
   };
 
@@ -66,7 +67,7 @@ const NakamaProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     if (nakama) {
       return nakama.getOpponentName();
     } else {
-      throw new Error("Nakama instance not found");
+      throw new NakamaInstanceError();
     }
   };
 
@@ -75,25 +76,25 @@ const NakamaProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   ) => {
     if (nakama) {
       nakama.setMatchDataCallback(matchDataCallback);
-    } else throw new Error("Nakama instance not found");
+    } else throw new NakamaInstanceError();
   };
 
   const writeRecord = async (result: string, fast: boolean) => {
     if (nakama) {
       await nakama.writeRecord(result, fast);
-    } else throw new Error("Nakama instance not found");
+    } else throw new NakamaInstanceError();
   };
 
   const getRecords = async (): Promise<LeaderboardData> => {
     if (nakama) {
       return await nakama.getRecords();
-    } else throw new Error("Nakama instance not found");
+    } else throw new NakamaInstanceError();
   };
 
   const makeMove = async (index: number) => {
     if (nakama) {
       await nakama.makeMove(index);
-    } else throw new Error("Nakama instance not found");
+    } else throw new NakamaInstanceError();
   };
 
   const disconnect = () => {

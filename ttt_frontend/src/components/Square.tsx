@@ -1,3 +1,4 @@
+import { HOME_COLOR, OPPONENT_COLOR, PIECE_O, PIECE_X } from "../Constants";
 import { Piece, SquareProps } from "../types/GameTypes";
 
 const Square = ({
@@ -8,9 +9,9 @@ const Square = ({
   onClick,
 }: SquareProps) => {
   const renderValue =
-    value === Piece.EMPTY ? "" : value === Piece.X ? "X" : "O";
+    value === Piece.EMPTY ? "" : value === Piece.X ? PIECE_X : PIECE_O;
   const colour =
-    value.valueOf() === playerPiece.valueOf() ? "#99edc3" : "#fba2dd";
+    value.valueOf() === playerPiece.valueOf() ? HOME_COLOR : OPPONENT_COLOR;
   return (
     <>
       <div

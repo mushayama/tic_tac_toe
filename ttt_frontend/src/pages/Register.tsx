@@ -1,27 +1,23 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useNakama } from "../context/NakamaContext";
+import { MAX_USERNAME_LENGTH } from "../Constants";
 
 function Register() {
   const [username, setUsername] = useState("");
   const [isLoading, setLoading] = useState(false);
   const [isPopupVisible, setPopupVisible] = useState(false);
   const [displayUsernameError, setDisplayUsernameError] = useState(false);
-  const maxUsernameLength = 6;
+  const maxUsernameLength = MAX_USERNAME_LENGTH;
 
   const navigate = useNavigate();
 
   const { authenticate, getDisplayName, setDisplayName } = useNakama();
 
-  const delay = async (milliseconds: number = 1000) => {
-    await new Promise((resolve) => setTimeout(resolve, milliseconds));
-  };
-
   const startSession = async () => {
     setLoading(true);
 
     try {
-      await delay();
       await authenticate();
 
       const displayName = await getDisplayName();
@@ -60,7 +56,6 @@ function Register() {
   };
 
   const navigateToGame = async () => {
-    await delay();
     navigate("/game");
   };
 
