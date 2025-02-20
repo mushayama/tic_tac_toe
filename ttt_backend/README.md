@@ -40,3 +40,10 @@
   sudo gcloud compute scp --recurse ./ttt_backend instance-20250220-133151:/home/marbab_arbab/project
   ```
 - There were a 3 small changes I made that are marked as comments in Dockerfile, docker-compose.yml and go.mod
+
+## nakama console:
+
+login for nakama console:
+
+- username: admin
+- password: password
